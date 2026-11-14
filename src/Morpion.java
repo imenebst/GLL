@@ -1,10 +1,12 @@
-import java.util.*;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Scanner;
 
 public class Morpion {
-    
+
     static String[] echiquier;
     static String symbol;
-    
+
     static String evalGagnant() {
         for (int i = 0; i < 8; i++) {
             String ligne = null;
@@ -37,13 +39,13 @@ public class Morpion {
             else if (i == 8)
                 return "egalite";
         }
- 
+
         System.out.println("Tour de " + symbol + "." +
             " Placez " + symbol + " a la case:");
         return null;
     }
 
-     
+
     // Affichage de l'echiquier
     /* |---|---|---|
        | 1 | 2 | 3 |
@@ -124,9 +126,42 @@ public class Morpion {
         Random rand = new Random();
         return casesLibres.get(rand.nextInt(casesLibres.size()));
     }
- 
+
     static int nbCoups;
     static boolean abandon;
+
+    // ===== Bilan de la session =====
+    static int nbParties = 0;
+    static int victoiresX = 0;
+    static int victoiresO = 0;
+    static int nbEgalites = 0;
+    static int totalCoups = 0;
+
+    // Enregistre le resultat d'une partie terminee
+    static void enregistrerPartie(String winner) {
+        nbParties++;
+        totalCoups += nbCoups;
+        if (winner.equals("X")) victoiresX++;
+        else if (winner.equals("O")) victoiresO++;
+        else if (winner.equals("egalite")) nbEgalites++;
+    }
+
+    // Texte du bilan (utilise par la console et par l'interface graphique)
+    static String texteBilan() {
+        return "Parties jouees       : " + nbParties + "\n"
+             + "Victoires joueur X   : " + victoiresX + "\n"
+             + "Victoires joueur O   : " + victoiresO + "\n"
+             + "Egalites             : " + nbEgalites + "\n"
+             + "Total de coups joues : " + totalCoups;
+    }
+
+    // Affiche le bilan complet de la session dans la console
+    static void afficherBilan() {
+        System.out.println();
+        System.out.println("========== BILAN DE LA SESSION ==========");
+        System.out.println(texteBilan());
+        System.out.println("=========================================");
+    }
 
     static String jouerPartie(Scanner in) {
         String winner = null;
@@ -136,7 +171,7 @@ public class Morpion {
 
         for (int i = 0; i < 9; i++)
             echiquier[i] = String.valueOf(i + 1);
- 
+
         System.out.println("Bienvenu au morpion.");
         symbol = choisirPremierJoueur(in);
         System.out.println("Le joueur " + symbol + " commence.");
@@ -202,6 +237,7 @@ public class Morpion {
         boolean rejouer;
         do {
             String winner = jouerPartie(in);
+            enregistrerPartie(winner);
 
             if (winner.equals("egalite"))
                 System.out.println("Egalite en " + nbCoups + " coups !");
@@ -210,11 +246,22 @@ public class Morpion {
             else
                 System.out.println("Bravo a " + winner + " ! Victoire en " + nbCoups + " coups.");
 
-            System.out.println("Voulez-vous rejouer ? (o/n)");
-            String reponse = in.nextLine().trim().toLowerCase();
+            String reponse;
+            do {
+                System.out.println("Voulez-vous rejouer ? (o/n)");
+                reponse = in.nextLine().trim().toLowerCase();
+
+                if (!reponse.equals("o") && !reponse.equals("oui")
+                        && !reponse.equals("n") && !reponse.equals("non")) {
+                    System.out.println("Reponse invalide. Entrez o ou n.");
+                }
+            } while (!reponse.equals("o") && !reponse.equals("oui")
+                    && !reponse.equals("n") && !reponse.equals("non"));
+
             rejouer = reponse.equals("o") || reponse.equals("oui");
         } while (rejouer);
 
+        afficherBilan();
         System.out.println("Merci d'avoir joue. A bientot !");
         in.close();
     }
