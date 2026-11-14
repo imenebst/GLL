@@ -3,10 +3,10 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Morpion {
-    
+
     static String[] echiquier;
     static String symbol;
-    
+
     static String evalGagnant() {
         for (int i = 0; i < 8; i++) {
             String ligne = null;
@@ -39,13 +39,13 @@ public class Morpion {
             else if (i == 8)
                 return "egalite";
         }
- 
+
         System.out.println("Tour de " + symbol + "." +
             " Placez " + symbol + " a la case:");
         return null;
     }
 
-     
+
     // Affichage de l'echiquier
     /* |---|---|---|
        | 1 | 2 | 3 |
@@ -105,6 +105,17 @@ public class Morpion {
         }
     }
 
+    // Choix du symbole du joueur humain (mode contre l'ordinateur)
+    static String choisirSymbole(Scanner in) {
+        while (true) {
+            System.out.print("Quel symbole voulez-vous jouer (X ou O) ? ");
+            String choix = in.next().trim().toUpperCase();
+            if (choix.equals("X") || choix.equals("O"))
+                return choix;
+            System.out.println("Choix invalide. Veuillez saisir X ou O.");
+        }
+    }
+
     static int coupOrdinateur() {
         List<Integer> casesLibres = new ArrayList<>();
         for (int i = 0; i < 9; i++) {
@@ -115,9 +126,42 @@ public class Morpion {
         Random rand = new Random();
         return casesLibres.get(rand.nextInt(casesLibres.size()));
     }
- 
+
     static int nbCoups;
     static boolean abandon;
+
+    // ===== Bilan de la session =====
+    static int nbParties = 0;
+    static int victoiresX = 0;
+    static int victoiresO = 0;
+    static int nbEgalites = 0;
+    static int totalCoups = 0;
+
+    // Enregistre le resultat d'une partie terminee
+    static void enregistrerPartie(String winner) {
+        nbParties++;
+        totalCoups += nbCoups;
+        if (winner.equals("X")) victoiresX++;
+        else if (winner.equals("O")) victoiresO++;
+        else if (winner.equals("egalite")) nbEgalites++;
+    }
+
+    // Texte du bilan (utilise par la console et par l'interface graphique)
+    static String texteBilan() {
+        return "Parties jouees       : " + nbParties + "\n"
+             + "Victoires joueur X   : " + victoiresX + "\n"
+             + "Victoires joueur O   : " + victoiresO + "\n"
+             + "Egalites             : " + nbEgalites + "\n"
+             + "Total de coups joues : " + totalCoups;
+    }
+
+    // Affiche le bilan complet de la session dans la console
+    static void afficherBilan() {
+        System.out.println();
+        System.out.println("========== BILAN DE LA SESSION ==========");
+        System.out.println(texteBilan());
+        System.out.println("=========================================");
+    }
 
     static String jouerPartie(Scanner in) {
         String winner = null;
@@ -127,14 +171,13 @@ public class Morpion {
 
         for (int i = 0; i < 9; i++)
             echiquier[i] = String.valueOf(i + 1);
- 
+
         System.out.println("Bienvenu au morpion.");
         symbol = choisirPremierJoueur(in);
         System.out.println("Le joueur " + symbol + " commence.");
         boolean contreOrdi = choisirModeJeu(in);
-        symbol = choisirSymbole(in);
-        String symboleHumain = symbol;
-        String symboleOrdi = symbol.equals("X") ? "O" : "X";
+        String symboleHumain = contreOrdi ? choisirSymbole(in) : symbol;
+        String symboleOrdi = symboleHumain.equals("X") ? "O" : "X";
         in.nextLine();
         System.out.println("(Tapez Q pendant votre tour pour abandonner)");
 
@@ -144,14 +187,6 @@ public class Morpion {
 
         while (winner == null) {
 
-            String saisie = in.nextLine().trim();
-
-            if (saisie.equalsIgnoreCase("Q")) {
-                System.out.println("Le joueur " + symbol + " abandonne la partie.");
-                winner = symbol.equals("X") ? "O" : "X";
-                abandon = true;
-                break;
-            }
             int chiffre;
 
             if (contreOrdi && symbol.equals(symboleOrdi)) {
@@ -159,10 +194,11 @@ public class Morpion {
                 System.out.println("L'ordinateur (" + symbol + ") joue en case " + chiffre);
             } else {
                 String saisie = in.nextLine().trim();
-                
+
                 if (saisie.equalsIgnoreCase("Q")) {
                     System.out.println("Le joueur " + symbol + " abandonne la partie.");
                     winner = symbol.equals("X") ? "O" : "X";
+                    abandon = true;
                     break;
                 }
 
@@ -177,24 +213,12 @@ public class Morpion {
                     System.out.println("Veuillez entrer un chiffre entre 1 et 9.");
                     continue;
                 }
-
-                if (echiquier[chiffre - 1].equals(String.valueOf(chiffre))) {
-                    echiquier[chiffre - 1] = symbol;
-                    nbCoups++;
-                    symbol = symbol.equals("X") ? "O" : "X";
-                    affichEchiquier();
-                    winner = evalGagnant();
-                }
-                else
-                    System.out.println("Case deja prise, entrez un autre chiffre");
-            } catch (NumberFormatException e) {
-                System.out.println("Veuillez entrer un chiffre entre 1 et 9.");
             }
 
             if (echiquier[chiffre - 1].equals(String.valueOf(chiffre))) {
                 echiquier[chiffre - 1] = symbol;
                 nbCoups++;
-                symbol = symbol.equals("X") ? "O" : "X"; 
+                symbol = symbol.equals("X") ? "O" : "X";
                 affichEchiquier();
                 winner = evalGagnant();
             }
@@ -211,6 +235,7 @@ public class Morpion {
         boolean rejouer;
         do {
             String winner = jouerPartie(in);
+            enregistrerPartie(winner);
 
             if (winner.equals("egalite"))
                 System.out.println("Egalite en " + nbCoups + " coups !");
@@ -234,6 +259,7 @@ public class Morpion {
             rejouer = reponse.equals("o") || reponse.equals("oui");
         } while (rejouer);
 
+        afficherBilan();
         System.out.println("Merci d'avoir joue. A bientot !");
         in.close();
     }
